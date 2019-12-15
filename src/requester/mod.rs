@@ -1,10 +1,10 @@
 use futures::prelude::*;
 use rsocket_rust::prelude::*;
 use crate::responder::ResponseCoon;
-//use crate::responder::ResponseCoon;
+use crate::common::*;
 
 pub struct RequestCoon {
-    pub client:  Client
+    pub client: Client
 }
 
 impl RequestCoon {

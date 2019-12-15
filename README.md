@@ -1,4 +1,8 @@
-```rust
+## hello-rsocket-rust
+
+![](https://github.com/feuyeux/hello-rsocket/blob/master/doc/hello-rsocket.png)
+
+```bash
 ▶ cargo run
 
 ====ExecFireAndForget====
@@ -22,5 +26,4 @@ Payload { m: Some(b"Rust"), d: Some(b"Hello#2") }
 <<<<<<<< CHANNEL: Payload { m: Some(b"Rust"), d: Some(b"Hello#0") }
 <<<<<<<< CHANNEL: Payload { m: Some(b"Rust"), d: Some(b"Hello#1") }
 <<<<<<<< CHANNEL: Payload { m: Some(b"Rust"), d: Some(b"Hello#2") }
-
 ```
