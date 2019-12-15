@@ -1,28 +1,26 @@
-//use crate::{responder, requester};
-use std::thread;
+use tokio::runtime::Runtime;
+use std::thread::sleep;
 use std::time::Duration;
 use hello_rsocket::{responder, requester};
-use std::error::Error;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let sleep_millis = Duration::from_millis(5);
+fn main() {
+    let server_runtime = Runtime::new().unwrap();
+    let mut client_runtime = Runtime::new().unwrap();
 
-    thread::sleep(sleep_millis);
-    let request_coon = requester::RequestCoon::new().await;
+    server_runtime.spawn(async move {
+        responder::start().await
+    });
 
-    request_coon.fnf().await;
-    request_coon.meta_push().await;
-    thread::sleep(sleep_millis);
+    let sleep_millis = Duration::from_millis(500);
+    sleep(sleep_millis);
 
-    request_coon.request_response().await;
-    thread::sleep(sleep_millis);
+    client_runtime.block_on(async {
+        let request_coon = requester::RequestCoon::new().await;
 
-    request_coon.request_stream().await;
-    thread::sleep(sleep_millis);
-
-    //futures do nothing unless you `.await` or poll them
-    request_coon.request_channel().await;
-
-    responder::start().await
+        request_coon.fnf().await;
+        request_coon.meta_push().await;
+        request_coon.request_response().await;
+        request_coon.request_stream().await;
+        request_coon.request_channel().await;
+    });
 }

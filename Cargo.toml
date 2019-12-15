@@ -11,7 +11,7 @@ homepage = "https://github.com/feuyeux/hello-rsocket-rust"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# Compiling rsocket_rust v0.4.0 (https://github.com/rsocket/rsocket-rust?branch=develop#8e7d276a)
+# Compiling rsocket_rust v0.4.0 (https://github.com/rsocket/rsocket-rust?branch=develop#cc71ca60)
 rsocket_rust =  { git = "https://github.com/rsocket/rsocket-rust", branch = "develop" }
 #rsocket_rust = "0.4.0"
 bytes = "0.5.2"
