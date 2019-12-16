@@ -3,7 +3,8 @@ use std::error::Error;
 use futures::prelude::*;
 use rsocket_rust::prelude::*;
 use crate::common::{HelloResponse, response_to_json};
-use bytes::{Bytes};
+use bytes::Bytes;
+use crate::common::*;
 
 pub async fn start() -> Result<(), Box<dyn Error + Send + Sync>> {
     RSocketFactory::receive()
@@ -24,17 +25,17 @@ impl RSocket for ResponseCoon {
     }
 
     fn fire_and_forget(&self, req: Payload) -> Mono<()> {
-        println!(">>>>>>>> fire_and_forget: {:?}", req);
+        let request = data_to_request(req.data());
+        println!(">>>>>>>> fire_and_forget: {:?}", request);
         Box::pin(async {})
     }
 
-    fn request_response(&self, req: Payload) -> Mono<Result<Payload, RSocketError>>  {
+    fn request_response(&self, req: Payload) -> Mono<Result<Payload, RSocketError>> {
+        let request = data_to_request(req.data());
         println!(
-            ">>>>>>>> request_response: data={:?},meta={:?}",
-            req.data(),
-            req.metadata()
+            ">>>>>>>> request_response: data={:?}, meta={:?}", request, req.metadata()
         );
-        let response = HelloResponse { id: "1".to_owned(),value:"hello".to_owned() };
+        let response = HelloResponse { id: "1".to_owned(), value: "hello".to_owned() };
         let json_data = response_to_json(&response);
         let p = Payload::builder()
             .set_data(Bytes::from(json_data))
@@ -44,10 +45,11 @@ impl RSocket for ResponseCoon {
     }
 
     fn request_stream(&self, req: Payload) -> Flux<Payload> {
-        println!(">>>>>>>> request_stream: {:?}", req);
+        let request = data_to_requests(req.data());
+        println!(">>>>>>>> request_stream: {:?}", request);
         let mut results = vec![];
         for _n in 0..3 {
-            let response = HelloResponse { id: "1".to_owned(),value:"hello".to_owned() };
+            let response = HelloResponse { id: "1".to_owned(), value: "hello".to_owned() };
             let json_data = response_to_json(&response);
             let p = Payload::builder()
                 .set_data(Bytes::from(json_data))
@@ -62,9 +64,11 @@ impl RSocket for ResponseCoon {
         let (sender, receiver) = mpsc::unbounded_channel::<Payload>();
         tokio::spawn(async move {
             while let Some(p) = reqs.next().await {
-                println!("{:?}", p);
+                let request = data_to_requests(p.data());
 
-                let response = HelloResponse { id: "1".to_owned(),value:"hello".to_owned() };
+                println!("{:?}", request);
+
+                let response = HelloResponse { id: "1".to_owned(), value: "hello".to_owned() };
                 let json_data = response_to_json(&response);
                 let resp = Payload::builder()
                     .set_data(Bytes::from(json_data))

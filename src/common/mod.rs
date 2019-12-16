@@ -24,6 +24,17 @@ pub struct Address {
     pub city: String,
 }
 
+pub fn data_to_request(data: &Option<Bytes>) -> HelloRequest {
+    let bytes_request = data.as_ref().unwrap();
+    let s = match str::from_utf8(bytes_request.bytes()) {
+        Ok(v) => v,
+        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    };
+    let json_request = String::from(s);
+    let hello_request = json_to_request(json_request);
+    hello_request
+}
+
 pub fn json_to_request(json_data: String) -> HelloRequest {
     let request: HelloRequest = serde_json::from_str(json_data.as_str()).unwrap();
     request
@@ -32,6 +43,18 @@ pub fn json_to_request(json_data: String) -> HelloRequest {
 pub fn request_to_json(address: &HelloRequest) -> String {
     let json_request = serde_json::to_string(&address).unwrap();
     json_request
+}
+
+
+pub fn data_to_requests(data: &Option<Bytes>) -> HelloRequests {
+    let bytes_request = data.as_ref().unwrap();
+    let s = match str::from_utf8(bytes_request.bytes()) {
+        Ok(v) => v,
+        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    };
+    let json_request = String::from(s);
+    let hello_request = json_to_requests(json_request);
+    hello_request
 }
 
 pub fn json_to_requests(json_data: String) -> HelloRequests {
