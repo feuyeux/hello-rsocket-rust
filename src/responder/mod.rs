@@ -2,6 +2,8 @@ use tokio::sync::mpsc;
 use std::error::Error;
 use futures::prelude::*;
 use rsocket_rust::prelude::*;
+use crate::common::{HelloResponse, response_to_json};
+use bytes::{Bytes};
 
 pub async fn start() -> Result<(), Box<dyn Error + Send + Sync>> {
     RSocketFactory::receive()
@@ -32,21 +34,28 @@ impl RSocket for ResponseCoon {
             req.data(),
             req.metadata()
         );
-        Box::pin(future::ok::<Payload, RSocketError>(req))
+        let response = HelloResponse { id: "1".to_owned(),value:"hello".to_owned() };
+        let json_data = response_to_json(&response);
+        let p = Payload::builder()
+            .set_data(Bytes::from(json_data))
+            .set_metadata_utf8("RUST")
+            .build();
+        Box::pin(future::ok::<Payload, RSocketError>(p))
     }
 
     fn request_stream(&self, req: Payload) -> Flux<Payload> {
         println!(">>>>>>>> request_stream: {:?}", req);
-//        let mut results = vec![];
-//        for n in 0..3 {
-//            let p = Payload::builder()
-//                .set_data(Bytes::from(format!("DATA_{}", n)))
-//                .set_metadata(Bytes::from(format!("METADATA_{}", n)))
-//                .build();
-//            results.push(p);
-//        }
-//        Box::pin(futures::stream::iter(results))
-        Box::pin(futures::stream::iter(vec![req.clone(), req.clone(), req]))
+        let mut results = vec![];
+        for _n in 0..3 {
+            let response = HelloResponse { id: "1".to_owned(),value:"hello".to_owned() };
+            let json_data = response_to_json(&response);
+            let p = Payload::builder()
+                .set_data(Bytes::from(json_data))
+                .set_metadata_utf8("RUST")
+                .build();
+            results.push(p);
+        }
+        Box::pin(futures::stream::iter(results))
     }
 
     fn request_channel(&self, mut reqs: Flux<Payload>) -> Flux<Payload> {
@@ -54,7 +63,14 @@ impl RSocket for ResponseCoon {
         tokio::spawn(async move {
             while let Some(p) = reqs.next().await {
                 println!("{:?}", p);
-                sender.send(p).unwrap();
+
+                let response = HelloResponse { id: "1".to_owned(),value:"hello".to_owned() };
+                let json_data = response_to_json(&response);
+                let resp = Payload::builder()
+                    .set_data(Bytes::from(json_data))
+                    .set_metadata_utf8("RUST")
+                    .build();
+                sender.send(resp).unwrap();
             }
         });
         Box::pin(receiver)

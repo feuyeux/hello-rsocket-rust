@@ -2,6 +2,8 @@ use futures::prelude::*;
 use rsocket_rust::prelude::*;
 use crate::responder::ResponseCoon;
 use crate::common::*;
+use bytes::Bytes;
+use rand::Rng;
 
 pub struct RequestCoon {
     pub client: Client
@@ -27,36 +29,49 @@ impl RequestCoon {
     }
 
     pub async fn meta_push(&self) {
-        let meta = Payload::builder().set_metadata_utf8("metadata only!").build();
+        let meta = Payload::builder().set_metadata_utf8("RUST").build();
         self.client.metadata_push(meta).await;
     }
     pub async fn fnf(&self) {
         println!("====ExecFireAndForget====");
-        let fnf = Payload::from("Mock FNF");
+        let request = HelloRequest { id: "1".to_owned() };
+        let json_data = request_to_json(&request);
+        let fnf = Payload::builder().set_data(Bytes::from(json_data)).build();
         self.client.fire_and_forget(fnf).await;
     }
 
     pub async fn request_response(&self) {
         println!("====ExecRequestResponse====");
+        let request = HelloRequest { id: "1".to_owned() };
+        let json_data = request_to_json(&request);
         let p = Payload::builder()
-            .set_data_utf8("Hello World!")
-            .set_metadata_utf8("Rust")
+            .set_data(Bytes::from(json_data))
+            .set_metadata_utf8("RUST")
             .build();
-        let resp = self.client.request_response(p).await.unwrap();
-        println!("<<<<<<<< : {:?}", resp.data());
+
+        let resp: Payload = self.client.request_response(p).await.unwrap();
+        let data = resp.data();
+
+        let hello_response = data_to_response(data);
+        println!("<<<<<<<< : {:?}", hello_response);
     }
 
     pub async fn request_stream(&self) {
         println!("====ExecRequestStream====");
+        let request = HelloRequests { ids: RequestCoon::random_ids(5) };
+        let json_data = requests_to_json(&request);
         let sending = Payload::builder()
-            .set_data_utf8("Hello Rust!")
-            .set_metadata_utf8("foobar")
+            .set_data(Bytes::from(json_data))
+            .set_metadata_utf8("RUST")
             .build();
-
         let mut results = self.client.request_stream(sending);
         loop {
             match results.next().await {
-                Some(v) => println!("<<<<<<<< STREAM: {:?}", v),
+                Some(v) => {
+                    let data = v.data();
+                    let hello_response = data_to_response(data);
+                    println!("<<<<<<<< STREAM: {:?}", hello_response)
+                }
                 None => break,
             }
         }
@@ -64,18 +79,40 @@ impl RequestCoon {
 
     pub async fn request_channel(&self) {
         println!("====ExecRequestChannel====");
+
         let mut sends = vec![];
-        for i in 0..3 {
-            let p = Payload::builder()
-                .set_data_utf8(&format!("Hello#{}", i))
-                .set_metadata_utf8("Rust")
+        for _i in 0..3 {
+            let request = HelloRequests { ids: RequestCoon::random_ids(3) };
+            let json_data = requests_to_json(&request);
+            let sending = Payload::builder()
+                .set_data(Bytes::from(json_data))
+                .set_metadata_utf8("RUST")
                 .build();
-            sends.push(p);
+            sends.push(sending);
         }
 
-        let mut resps = self.client.request_channel(Box::pin(stream::iter(sends)));
+        let iter = stream::iter(sends);
+        let pin = Box::pin(iter);
+
+        let mut resps = self.client.request_channel(pin);
         while let Some(v) = resps.next().await {
-            println!("<<<<<<<< CHANNEL: {:?}", v);
+            let data = v.data();
+            let hello_response = data_to_response(data);
+            println!("<<<<<<<< CHANNEL: {:?}", hello_response);
         }
+    }
+
+    pub fn random_ids(max: i32) -> Vec<String> {
+        let mut result: Vec<String> = Vec::new();
+        for i in 0..max {
+            result.push(i.to_string());
+        }
+        result
+    }
+
+    pub fn random_id(max: i32) -> String {
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(0, max);
+        x.to_string()
     }
 }
