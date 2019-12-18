@@ -4,6 +4,8 @@ use crate::responder::ResponseCoon;
 use crate::common::*;
 use bytes::Bytes;
 use rand::Rng;
+use std::thread::sleep;
+use std::time::Duration;
 
 pub struct RequestCoon {
     pub client: Client
@@ -29,10 +31,13 @@ impl RequestCoon {
     }
 
     pub async fn meta_push(&self) {
+        println!();
+        println!("====ExecMetaPush====");
         let meta = Payload::builder().set_metadata_utf8("RUST").build();
         self.client.metadata_push(meta).await;
     }
     pub async fn fnf(&self) {
+        println!();
         println!("====ExecFireAndForget====");
         let request = HelloRequest { id: "1".to_owned() };
         let json_data = request_to_json(&request);
@@ -41,6 +46,7 @@ impl RequestCoon {
     }
 
     pub async fn request_response(&self) {
+        println!();
         println!("====ExecRequestResponse====");
         let request = HelloRequest { id: "1".to_owned() };
         let json_data = request_to_json(&request);
@@ -53,10 +59,11 @@ impl RequestCoon {
         let data = resp.data();
 
         let hello_response = data_to_response(data);
-        println!("<<<<<<<< : {:?}", hello_response);
+        println!("<< [request_response] response id:{},value:{}", hello_response.id, hello_response.value);
     }
 
     pub async fn request_stream(&self) {
+        println!();
         println!("====ExecRequestStream====");
         let request = HelloRequests { ids: RequestCoon::random_ids(5) };
         let json_data = requests_to_json(&request);
@@ -70,7 +77,7 @@ impl RequestCoon {
                 Some(v) => {
                     let data = v.data();
                     let hello_response = data_to_response(data);
-                    println!("<<<<<<<< STREAM: {:?}", hello_response)
+                    println!("<< [request_stream] response:{:?}", hello_response)
                 }
                 None => break,
             }
@@ -78,6 +85,7 @@ impl RequestCoon {
     }
 
     pub async fn request_channel(&self) {
+        println!();
         println!("====ExecRequestChannel====");
 
         let mut sends = vec![];
@@ -89,7 +97,9 @@ impl RequestCoon {
                 .set_metadata_utf8("RUST")
                 .build();
             sends.push(sending);
+            sleep( Duration::from_millis(100));
         }
+        sleep( Duration::from_millis(1000));
 
         let iter = stream::iter(sends);
         let pin = Box::pin(iter);
@@ -98,7 +108,7 @@ impl RequestCoon {
         while let Some(v) = resps.next().await {
             let data = v.data();
             let hello_response = data_to_response(data);
-            println!("<<<<<<<< CHANNEL: {:?}", hello_response);
+            println!("<< [request_channel] response:{:?}", hello_response);
         }
     }
 

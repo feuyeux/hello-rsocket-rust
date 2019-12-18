@@ -17,10 +17,9 @@ fn rsocket_demo() {
     sleep(sleep_millis);
     client_runtime.block_on(async {
         let request_coon = requester::RequestCoon::new().await;
-
-        request_coon.fnf().await;
-        sleep(sleep_millis);
         request_coon.meta_push().await;
+        sleep(sleep_millis);
+        request_coon.fnf().await;
         sleep(sleep_millis);
         request_coon.request_response().await;
         sleep(sleep_millis);
