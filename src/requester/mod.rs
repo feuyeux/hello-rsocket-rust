@@ -87,7 +87,7 @@ impl RequestCoon {
         println!("====ExecRequestChannel====");
 
         let mut sends = vec![];
-        for _i in 0..3 {
+        for _ in 0..3 {
             let request = HelloRequests { ids: RequestCoon::random_ids(3) };
             let json_data = requests_to_json(&request);
             let sending = Payload::builder()
@@ -95,14 +95,12 @@ impl RequestCoon {
                 .set_metadata_utf8("RUST")
                 .build();
             sends.push(sending);
-            sleep( Duration::from_millis(100));
         }
-        sleep( Duration::from_millis(1000));
-
         let iter = stream::iter(sends);
         let pin = Box::pin(iter);
-
         let mut resps = self.client.request_channel(pin);
+
+        sleep(Duration::from_millis(1000));
         while let Some(v) = resps.next().await {
             let data = v.data();
             let hello_response = data_to_response(data);
@@ -112,15 +110,11 @@ impl RequestCoon {
 
     pub fn random_ids(max: i32) -> Vec<String> {
         let mut result: Vec<String> = Vec::new();
-        for i in 0..max {
-            result.push(i.to_string());
+        let mut rng = rand::thread_rng();
+        for _ in 0..max {
+            let rnd_id = rng.gen_range(0, 5);
+            result.push(rnd_id.to_string());
         }
         result
-    }
-
-    pub fn random_id(max: i32) -> String {
-        let mut rng = rand::thread_rng();
-        let x = rng.gen_range(0, max);
-        x.to_string()
     }
 }
