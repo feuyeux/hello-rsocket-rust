@@ -10,10 +10,10 @@ static HELLO_LIST: [&str; 6] = ["Hello", "Bonjour", "Hola", "こんにちは", "
 
 pub async fn start() -> Result<(), Box<dyn Error + Send + Sync>> {
     RSocketFactory::receive()
-        .transport("tcp://127.0.0.1:7878")
         .acceptor(|_setup, _socket| {
             Ok(Box::new(ResponseCoon))
         })
+        .transport("tcp://127.0.0.1:7878")
         .serve()
         .await
 }

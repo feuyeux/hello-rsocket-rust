@@ -18,8 +18,6 @@ impl RequestCoon {
                 //.acceptor(|| Box::new(responder::ResponseCoon))
                 .acceptor(|| Box::new(ResponseCoon))
                 .transport("tcp://127.0.0.1:7878")
-                .setup(Payload::from("READY!"))
-                .mime_type("text/plain", "text/plain")
                 .start()
                 .await
                 .unwrap()
