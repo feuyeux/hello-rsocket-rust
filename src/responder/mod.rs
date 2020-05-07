@@ -14,7 +14,7 @@ pub async fn start() -> Result<(), Box<dyn Error + Send + Sync>> {
         .acceptor(Box::new(|_setup, _socket| {
             Ok(Box::new(ResponseCoon))
         }))
-        .transport(TcpServerTransport::from("tcp://127.0.0.1:7878"))
+        .transport(TcpServerTransport::from("127.0.0.1:7878"))
         .serve()
         .await
 }
