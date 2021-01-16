@@ -2,9 +2,13 @@
 
 ![](https://github.com/feuyeux/hello-rsocket/blob/master/doc/hello-rsocket.png)
 
-```bash
-▶ cargo run
+```sh
+cargo build
+cargo run --bin server
+```
 
+```sh
+cargo run --bin client
 ====ExecMetaPush====
 >> [metadata_push]: Payload { m: Some(b"RUST"), d: None }
 
@@ -37,3 +41,5 @@
 << [request_channel] response:HelloResponse { id: "1", value: "Bonjour" }
 << [request_channel] response:HelloResponse { id: "4", value: "Ciao" }
 ```
+
+- https://github.com/rsocket/rsocket-rust

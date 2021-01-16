@@ -1,39 +1,42 @@
 use tokio::sync::mpsc;
-use std::error::Error;
 use futures::prelude::*;
 use crate::common::{HelloResponse, response_to_json};
 use crate::common::*;
-use rsocket_rust::error::RSocketError;
 use rsocket_rust::prelude::*;
+use rsocket_rust::{Result, runtime};
 use rsocket_rust_transport_tcp::TcpServerTransport;
+use async_stream::stream;
+use async_trait::async_trait;
+use log::info;
 
 static HELLO_LIST: [&str; 6] = ["Hello", "Bonjour", "Hola", "こんにちは", "Ciao", "안녕하세요"];
 
-pub async fn start() -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn start() -> Result<()> {
     RSocketFactory::receive()
+        .transport(TcpServerTransport::from("127.0.0.1:7878"))
         .acceptor(Box::new(|_setup, _socket| {
             Ok(Box::new(ResponseCoon))
         }))
-        .transport(TcpServerTransport::from("127.0.0.1:7878"))
         .serve()
         .await
 }
 
-pub struct ResponseCoon;
 
+pub struct ResponseCoon;
+#[async_trait]
 impl RSocket for ResponseCoon {
-    fn metadata_push(&self, req: Payload) -> Mono<()> {
-        println!(">> [metadata_push]: {:?}", req);
-        Box::pin(async {})
+    async fn metadata_push(&self, req: Payload) -> Result<()>{
+        info!(">> [metadata_push]: {:?}", req);
+        Ok(())
     }
 
-    fn fire_and_forget(&self, req: Payload) -> Mono<()> {
+    async fn fire_and_forget(&self, req: Payload) ->  Result<()> {
         let request = data_to_request(req.data());
         println!(">> [fire_and_forget] FNF:{}", request.id);
-        Box::pin(async {})
+        Ok(())
     }
 
-    fn request_response(&self, req: Payload) -> Mono<Result<Payload, RSocketError>> {
+    async fn request_response(&self, req: Payload) -> Result<Option<Payload>>  {
         let request = data_to_request(req.data());
         println!(
             ">> [request_response] data:{:?}, meta={:?}", request, req.metadata()
@@ -46,10 +49,10 @@ impl RSocket for ResponseCoon {
             .set_data(json_data)
             .set_metadata_utf8("RUST")
             .build();
-        Box::pin(future::ok::<Payload, RSocketError>(p))
+        Ok(Some((p)))
     }
 
-    fn request_stream(&self, req: Payload) -> Flux<Result<Payload, RSocketError>> {
+    fn request_stream(&self, req: Payload) -> Flux<Result<Payload>> {
         let request = data_to_requests(req.data());
         println!(">> [request_stream] data:{:?}", request);
         let mut results = vec![];
@@ -67,9 +70,9 @@ impl RSocket for ResponseCoon {
         Box::pin(futures::stream::iter(results))
     }
 
-    fn request_channel(&self, mut requests: Flux<Result<Payload, RSocketError>>) ->  Flux<Result<Payload, RSocketError>> {
-        let (sender, receiver) = mpsc::unbounded_channel();
-        tokio::spawn(async move {
+    fn request_channel(&self, mut requests: Flux<Result<Payload>>) ->  Flux<Result<Payload>> {
+        let (sender, mut receiver) = mpsc::unbounded_channel();
+        runtime::spawn(async move {
             while let Some(Ok(p)) = requests.next().await {
                 let request = data_to_requests(p.data());
                 println!(">> [request_channel] data:{:?}", request);
@@ -86,6 +89,11 @@ impl RSocket for ResponseCoon {
                 }
             }
         });
-        Box::pin(receiver)
+        // Box::pin(receiver)
+        Box::pin(stream! {
+            while let Some(it) = receiver.recv().await {
+                yield it;
+            }
+        })
     }
 }

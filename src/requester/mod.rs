@@ -5,10 +5,10 @@ use std::thread::sleep;
 use std::time::Duration;
 use rsocket_rust::prelude::*;
 use rsocket_rust_transport_tcp::TcpClientTransport;
-use rsocket_rust::runtime::DefaultSpawner;
+use rsocket_rust::Client;
 
 pub struct RequestCoon {
-    pub client: Client<DefaultSpawner>
+    pub client: Client
 }
 
 impl RequestCoon {
@@ -22,16 +22,18 @@ impl RequestCoon {
         }
     }
 
-    pub fn destroy(self) {
-        self.client.close();
+    pub async fn destroy(self) {
+       self.client.wait_for_close().await;
     }
 
-    pub async fn meta_push(&self) {
+    pub async fn meta_push(&self){
         println!();
         println!("====ExecMetaPush====");
         let meta = Payload::builder().set_metadata_utf8("RUST").build();
-        self.client.metadata_push(meta).await;
+        let result = self.client.metadata_push(meta).await;
+        result.unwrap();
     }
+
     pub async fn fnf(&self) {
         println!();
         println!("====ExecFireAndForget====");
@@ -39,7 +41,8 @@ impl RequestCoon {
         let json_data = request_to_json(&request);
         //let bytes = Bytes::from(json_data);
         let fnf = Payload::builder().set_data(json_data).build();
-        self.client.fire_and_forget(fnf).await;
+        let result = self.client.fire_and_forget(fnf).await;
+        result.unwrap();
     }
 
     pub async fn request_response(&self) {
@@ -53,10 +56,8 @@ impl RequestCoon {
             .set_metadata_utf8("RUST")
             .build();
 
-        let resp: Payload = self.client.request_response(p).await.unwrap();
-        let data = resp.data();
-
-        let hello_response = data_to_response(data);
+        let resp = self.client.request_response(p).await.unwrap();
+        let hello_response = data_to_response(resp.unwrap().data());
         println!("<< [request_response] response id:{},value:{}", hello_response.id, hello_response.value);
     }
 
@@ -126,7 +127,7 @@ impl RequestCoon {
         let mut result: Vec<String> = Vec::new();
         let mut rng = rand::thread_rng();
         for _ in 0..max {
-            let rnd_id = rng.gen_range(0, 5);
+            let rnd_id = rng.gen_range(0..5);
             result.push(rnd_id.to_string());
         }
         result
