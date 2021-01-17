@@ -21,7 +21,6 @@ pub async fn start() -> Result<()> {
         .await
 }
 
-
 pub struct ResponseCoon;
 #[async_trait]
 impl RSocket for ResponseCoon {
@@ -32,13 +31,13 @@ impl RSocket for ResponseCoon {
 
     async fn fire_and_forget(&self, req: Payload) ->  Result<()> {
         let request = data_to_request(req.data());
-        println!(">> [fire_and_forget] FNF:{}", request.id);
+        info!(">> [fire_and_forget] FNF:{}", request.id);
         Ok(())
     }
 
     async fn request_response(&self, req: Payload) -> Result<Option<Payload>>  {
         let request = data_to_request(req.data());
-        println!(
+        info!(
             ">> [request_response] data:{:?}, meta={:?}", request, req.metadata()
         );
         let index = request.id.parse::<usize>().unwrap();
@@ -54,7 +53,7 @@ impl RSocket for ResponseCoon {
 
     fn request_stream(&self, req: Payload) -> Flux<Result<Payload>> {
         let request = data_to_requests(req.data());
-        println!(">> [request_stream] data:{:?}", request);
+        info!(">> [request_stream] data:{:?}", request);
         let mut results = vec![];
         for _id in request.ids {
             let index = _id.parse::<usize>().unwrap();
@@ -75,7 +74,7 @@ impl RSocket for ResponseCoon {
         runtime::spawn(async move {
             while let Some(Ok(p)) = requests.next().await {
                 let request = data_to_requests(p.data());
-                println!(">> [request_channel] data:{:?}", request);
+                info!(">> [request_channel] data:{:?}", request);
                 for _id in request.ids {
                     let index = _id.parse::<usize>().unwrap();
                     let response = HelloResponse { id: _id, value: HELLO_LIST[index].to_string() };

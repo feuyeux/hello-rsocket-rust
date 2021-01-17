@@ -19,6 +19,6 @@ async fn test() {
         .set_metadata_utf8("Rust")
         .build();
     let res = cli.request_response(req).await.unwrap();
-    println!("got: {:?}", res);
+    info!("got: {:?}", res);
     cli.close();
 }

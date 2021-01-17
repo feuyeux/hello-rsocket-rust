@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     RSocketFactory::receive()
         .transport(&addr)
         .acceptor(|setup, _socket| {
-            println!("accept setup: {:?}", setup);
+            info!("accept setup: {:?}", setup);
             Ok(Box::new(EchoRSocket))
             // Or you can reject setup
             // Err(From::from("SETUP_NOT_ALLOW"))

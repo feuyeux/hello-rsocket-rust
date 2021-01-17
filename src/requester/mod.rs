@@ -6,6 +6,7 @@ use std::time::Duration;
 use rsocket_rust::prelude::*;
 use rsocket_rust_transport_tcp::TcpClientTransport;
 use rsocket_rust::Client;
+use log::info;
 
 pub struct RequestCoon {
     pub client: Client
@@ -27,16 +28,14 @@ impl RequestCoon {
     }
 
     pub async fn meta_push(&self){
-        println!();
-        println!("====ExecMetaPush====");
+        info!("====ExecMetaPush====");
         let meta = Payload::builder().set_metadata_utf8("RUST").build();
         let result = self.client.metadata_push(meta).await;
         result.unwrap();
     }
 
     pub async fn fnf(&self) {
-        println!();
-        println!("====ExecFireAndForget====");
+        info!("====ExecFireAndForget====");
         let request = HelloRequest { id: "1".to_owned() };
         let json_data = request_to_json(&request);
         //let bytes = Bytes::from(json_data);
@@ -46,8 +45,7 @@ impl RequestCoon {
     }
 
     pub async fn request_response(&self) {
-        println!();
-        println!("====ExecRequestResponse====");
+        info!("====ExecRequestResponse====");
         let request = HelloRequest { id: "1".to_owned() };
         let json_data = request_to_json(&request);
         //let bytes = Bytes::from(json_data);
@@ -58,12 +56,11 @@ impl RequestCoon {
 
         let resp = self.client.request_response(p).await.unwrap();
         let hello_response = data_to_response(resp.unwrap().data());
-        println!("<< [request_response] response id:{},value:{}", hello_response.id, hello_response.value);
+        info!("<< [request_response] response id:{},value:{}", hello_response.id, hello_response.value);
     }
 
     pub async fn request_stream(&self) {
-        println!();
-        println!("====ExecRequestStream====");
+        info!("====ExecRequestStream====");
         let request = HelloRequests { ids: RequestCoon::random_ids(5) };
         let json_data = requests_to_json(&request);
         //let bytes = Bytes::from(json_data);
@@ -77,10 +74,10 @@ impl RequestCoon {
                 Some(Ok(v)) => {
                     let data = v.data();
                     let hello_response = data_to_response(data);
-                    println!("<< [request_stream] response:{:?}", hello_response)
+                    info!("<< [request_stream] response:{:?}", hello_response)
                 }
                 Some(Err(e)) => {
-                    println!("CHANNEL_RESPONSE FAILED: {:?}", e);
+                    info!("CHANNEL_RESPONSE FAILED: {:?}", e);
                     break;
                 }
                 None => break,
@@ -89,9 +86,7 @@ impl RequestCoon {
     }
 
     pub async fn request_channel(&self) {
-        println!();
-        println!("====ExecRequestChannel====");
-
+        info!("====ExecRequestChannel====");
         let mut sends = vec![];
         for _ in 0..3 {
             let request = HelloRequests { ids: RequestCoon::random_ids(3) };
@@ -112,10 +107,10 @@ impl RequestCoon {
                 Some(Ok(v)) => {
                     let data = v.data();
                     let hello_response = data_to_response(data);
-                    println!("<< [request_channel] response:{:?}", hello_response);
+                    info!("<< [request_channel] response:{:?}", hello_response);
                 }
                 Some(Err(e)) => {
-                    println!("CHANNEL_RESPONSE FAILED: {:?}", e);
+                    info!("CHANNEL_RESPONSE FAILED: {:?}", e);
                     break;
                 }
                 None => break,
